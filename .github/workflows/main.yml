@@ -26,25 +26,24 @@ jobs:
         with:
           gradle-version: '9.3.1'
 
-      - name: Prepare debug keystore & Android SDK licenses
+- name: Generate release keystore & accept licenses
         working-directory: ${{ env.PROJECT_DIR }}
         run: |
-          if [ -f debug.keystore.base64 ]; then
-            base64 -d debug.keystore.base64 > debug.keystore
-          elif [ ! -f debug.keystore ]; then
-            keytool -genkeypair -v -keystore debug.keystore \
-              -storepass android -alias androiddebugkey -keypass android \
-              -keyalg RSA -keysize 2048 -validity 10000 \
-              -dname "CN=Android Debug,O=Android,C=US"
-          fi
+          keytool -genkeypair -v -keystore my-upload-key.jks \
+            -storepass notitrack123 -alias upload -keypass notitrack123 \
+            -keyalg RSA -keysize 2048 -validity 10000 \
+            -dname "CN=NotiTrack,O=Personal,C=VN"
           yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --licenses > /dev/null 2>&1 || true
 
-      - name: Build APK
+      - name: Build Release APK
         working-directory: ${{ env.PROJECT_DIR }}
-        run: gradle :app:assembleDebug --no-daemon
+        env:
+          STORE_PASSWORD: notitrack123
+          KEY_PASSWORD: notitrack123
+        run: gradle :app:assembleRelease --no-daemon
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: NotiTrack-debug-apk
-          path: ${{ env.PROJECT_DIR }}/app/build/outputs/apk/debug/app-debug.apk
+          name: NotiTrack-release-apk
+          path: ${{ env.PROJECT_DIR }}/app/build/outputs/apk/release/app-release.apk
